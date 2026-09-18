@@ -1,0 +1,30 @@
+﻿# Python & FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env
+*.db
+*.sqlite3
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vscode/
+.idea/
+
+# Backend uploads / temp
+backend/uploads/attachments/*
+!backend/uploads/attachments/.gitkeep
+
+# OS / IDE files
+.DS_Store
+Thumbs.db
