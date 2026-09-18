@@ -198,6 +198,50 @@ def test_full_project_and_task_lifecycle():
     assert len(res_notifs.json()) >= 1
 
 
+def test_projects_sort_by_date_range():
+    res_lead = client.post(
+        "/api/v1/auth/register",
+        json={"name": "Lead Sort", "email": "lead_sort@example.com", "password": "password123", "role": "TEAM_LEAD"},
+    )
+    assert res_lead.status_code == 201
+    token = res_lead.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    early = client.post(
+        "/api/v1/projects",
+        headers=headers,
+        json={
+            "name": "Later Project",
+            "start_date": "2026-02-10T00:00:00Z",
+            "end_date": "2026-02-20T00:00:00Z",
+        },
+    )
+    assert early.status_code == 201
+
+    late = client.post(
+        "/api/v1/projects",
+        headers=headers,
+        json={
+            "name": "Earlier Project",
+            "start_date": "2026-01-10T00:00:00Z",
+            "end_date": "2026-01-20T00:00:00Z",
+        },
+    )
+    assert late.status_code == 201
+
+    earliest = client.get("/api/v1/projects?sort=earliest", headers=headers)
+    assert earliest.status_code == 200
+    earliest_names = [item["name"] for item in earliest.json()]
+    assert earliest_names[0] == "Earlier Project"
+    assert earliest_names[1] == "Later Project"
+
+    latest = client.get("/api/v1/projects?sort=latest", headers=headers)
+    assert latest.status_code == 200
+    latest_names = [item["name"] for item in latest.json()]
+    assert latest_names[0] == "Later Project"
+    assert latest_names[1] == "Earlier Project"
+
+
 def test_attachments_and_comments():
     # 1. Register Lead
     res_lead = client.post(

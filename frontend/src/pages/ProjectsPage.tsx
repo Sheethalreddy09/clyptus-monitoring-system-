@@ -6,23 +6,36 @@ import { ProjectModal } from '../components/projects/ProjectModal';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { Select } from '../components/common/Select';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+
+type ProjectSortMode = 'earliest' | 'latest';
+
+const getProjectDateValue = (project: Project) => {
+  const start = project.start_date ? new Date(project.start_date).getTime() : Number.NEGATIVE_INFINITY;
+  const end = project.end_date ? new Date(project.end_date).getTime() : Number.NEGATIVE_INFINITY;
+  return {
+    start: Number.isFinite(start) ? start : Number.MAX_SAFE_INTEGER,
+    end: Number.isFinite(end) ? end : Number.MAX_SAFE_INTEGER,
+  };
+};
 
 export const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [sortMode, setSortMode] = useState<ProjectSortMode>('earliest');
 
   const { user } = useAuth();
   const isLead = user?.role === 'TEAM_LEAD';
   const navigate = useNavigate();
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (nextSortMode: ProjectSortMode = sortMode) => {
     try {
-      const res = await api.get<Project[]>('/api/v1/projects');
+      const res = await api.get<Project[]>('/api/v1/projects', { params: { sort: nextSortMode } });
       setProjects(res.data);
     } catch (err) {
       // silent
@@ -32,8 +45,17 @@ export const ProjectsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    fetchProjects(sortMode);
+  }, [sortMode]);
+
+  const sortedProjects = [...projects].sort((a, b) => {
+    const first = getProjectDateValue(a);
+    const second = getProjectDateValue(b);
+    const comparison = (first.start ?? first.end) - (second.start ?? second.end);
+    const rangeComparison = (first.end ?? first.start) - (second.end ?? second.start);
+    const result = comparison === 0 ? rangeComparison : comparison;
+    return sortMode === 'earliest' ? result : -result;
+  });
 
   if (loading) return <LoadingSpinner message="Loading projects..." />;
 
@@ -45,6 +67,18 @@ export const ProjectsPage: React.FC = () => {
           <p className="text-xs text-slate-500 mt-1">
             Manage projects, monitor progress percentages, and track team assignments.
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Sort</label>
+          <Select
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value as ProjectSortMode)}
+            options={[
+              { value: 'earliest', label: 'Earliest First' },
+              { value: 'latest', label: 'Latest First' },
+            ]}
+            className="min-w-[180px]"
+          />
         </div>
         {isLead && (
           <Button
@@ -80,7 +114,7 @@ export const ProjectsPage: React.FC = () => {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {sortedProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}

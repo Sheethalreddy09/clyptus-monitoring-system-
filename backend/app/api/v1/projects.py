@@ -1,5 +1,6 @@
+from datetime import datetime, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.all_models import Project, ProjectMember, User, Task, TaskStatus
@@ -11,11 +12,32 @@ from app.services.activity_service import log_activity
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
 
+def _normalize_datetime(value: Optional[datetime]) -> datetime:
+    if value is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _project_sort_key(project: Project):
+    start = _normalize_datetime(project.start_date)
+    end = _normalize_datetime(project.end_date)
+    return (start, end, project.id)
+
+
 @router.get("", response_model=List[ProjectOut])
 def list_projects(
+    sort: str = Query("earliest", description="Date sort for the project range: earliest, latest, asc, or desc."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    sort_key = (sort or "earliest").lower()
+    if sort_key in {"asc", "earliest", "from_date", "from-date", "start_date", "start-date"}:
+        sort_key = "earliest"
+    elif sort_key in {"desc", "dsc", "latest", "to_date", "to-date", "end_date", "end-date"}:
+        sort_key = "latest"
+
     if current_user.role == "TEAM_LEAD":
         projects = db.query(Project).all()
     else:
@@ -26,6 +48,9 @@ def list_projects(
             .filter(ProjectMember.user_id == current_user.id)
             .all()
         )
+
+    sort_reverse = sort_key == "latest"
+    projects = sorted(projects, key=_project_sort_key, reverse=sort_reverse)
 
     res = []
     for p in projects:
