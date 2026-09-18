@@ -65,6 +65,39 @@ def test_register_and_login_lead():
     assert res_me.json()["email"] == "alice@example.com"
 
 
+def test_forgot_and_reset_password():
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "name": "Bob Member",
+            "email": "bob@example.com",
+            "password": "oldpassword123",
+            "role": "TEAM_MEMBER",
+        },
+    )
+
+    # Forgot Password lookup
+    res = client.post("/api/v1/auth/forgot-password", json={"email": "bob@example.com"})
+    assert res.status_code == 200
+    assert res.json()["email"] == "bob@example.com"
+
+    # Reset Password
+    res = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": "bob@example.com", "new_password": "newpassword123"},
+    )
+    assert res.status_code == 200
+
+    # Login with new password
+    res = client.post(
+        "/api/v1/auth/login",
+        json={"email": "bob@example.com", "password": "newpassword123"},
+    )
+    assert res.status_code == 200
+    assert "access_token" in res.json()
+
+
+
 def test_full_project_and_task_lifecycle():
     # 1. Register Team Lead
     res_lead = client.post(

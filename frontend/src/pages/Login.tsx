@@ -61,14 +61,21 @@ export const Login: React.FC = () => {
             required
           />
 
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div>
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <div className="flex justify-end mt-1.5">
+              <Link to="/forgot-password" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                Forgot password?
+              </Link>
+            </div>
+          </div>
 
           <Button type="submit" loading={loading} className="w-full mt-2">
             Sign In

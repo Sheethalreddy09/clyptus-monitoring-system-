@@ -11,7 +11,6 @@ import {
   BarChart3,
   Activity,
   Bell,
-  Settings,
   ShieldCheck,
   UserCheck,
 } from 'lucide-react';
@@ -159,10 +158,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <NavLink to="/notifications" className={navLinkClass} onClick={onClose}>
                 <Bell className="w-4 h-4" />
                 <span>Notifications</span>
-              </NavLink>
-              <NavLink to="/settings" className={navLinkClass} onClick={onClose}>
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
               </NavLink>
             </div>
           </div>

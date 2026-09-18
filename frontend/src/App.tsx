@@ -6,6 +6,7 @@ import { Layout } from './components/layout/Layout';
 // Pages
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { DashboardLead } from './pages/DashboardLead';
 import { DashboardMember } from './pages/DashboardMember';
 import { ProjectsPage } from './pages/ProjectsPage';
@@ -57,8 +58,9 @@ export default function App() {
   return (
     <Routes>
       {/* ── Public routes ─────────────────────────────────────────── */}
-      <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/login"           element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register"        element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
       {/* ── Protected routes (wrapped in Layout + sidebar) ─────────── */}
       <Route element={<PrivateRoute><Layout /></PrivateRoute>}>

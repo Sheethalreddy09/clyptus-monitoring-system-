@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_password, hash_password, create_access_token
 from app.models.all_models import User
-from app.schemas.user import UserRegister, UserLogin, Token, UserOut
+from app.schemas.user import UserRegister, UserLogin, Token, UserOut, ForgotPasswordRequest, ResetPasswordRequest
 from app.services.auth_service import get_current_user
 from app.services.activity_service import log_activity
 
@@ -66,3 +66,43 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/forgot-password")
+def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No user account found with this email address."
+        )
+    return {
+        "message": "Account verified. You may now reset your password.",
+        "email": user.email,
+        "name": user.name,
+        "role": user.role
+    }
+
+
+@router.post("/reset-password")
+def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No user account found with this email address."
+        )
+
+    user.password_hash = hash_password(req.new_password)
+    db.commit()
+
+    log_activity(
+        db=db,
+        user_id=user.id,
+        action="Password was reset successfully",
+        entity_type="USER",
+        entity_id=user.id,
+    )
+
+    return {"message": "Password updated successfully. You can now log in with your new password."}
+
