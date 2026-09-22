@@ -17,6 +17,12 @@ from app.models.all_models import (
     NotificationType,
     ActivityLog,
 )
+from app.models.attendance import (
+    AttendanceRecord,
+    PunchLog,
+    AttendanceStatus,
+    PunchType,
+)
 
 __all__ = [
     "Base",
@@ -36,4 +42,8 @@ __all__ = [
     "Notification",
     "NotificationType",
     "ActivityLog",
+    "AttendanceRecord",
+    "PunchLog",
+    "AttendanceStatus",
+    "PunchType",
 ]

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   CheckCircle2,
@@ -9,6 +9,10 @@ import {
   Plus,
   ArrowRight,
   FolderKanban,
+  User,
+  Filter,
+  Layers,
+  List,
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { ProgressBar } from '../components/common/ProgressBar';
@@ -20,13 +24,16 @@ import { TaskCard } from '../components/tasks/TaskCard';
 import { ProjectModal } from '../components/projects/ProjectModal';
 import { TaskModal } from '../components/tasks/TaskModal';
 import api from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export const DashboardLead: React.FC = () => {
   const [data, setData] = useState<LeadDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const [selectedActivityMember, setSelectedActivityMember] = useState<string>('ALL');
+  const [activityViewMode, setActivityViewMode] = useState<'feed' | 'sections'>('feed');
 
   const navigate = useNavigate();
 
@@ -44,6 +51,39 @@ export const DashboardLead: React.FC = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const activityMembers = useMemo(() => {
+    const map = new Map<number, { id: number; name: string; email?: string; count: number }>();
+    if (data?.team_member_progress) {
+      data.team_member_progress.forEach((m) => {
+        map.set(m.user_id, {
+          id: m.user_id,
+          name: m.user_name,
+          email: m.user_email,
+          count: 0,
+        });
+      });
+    }
+    if (data?.recent_activity) {
+      data.recent_activity.forEach((act) => {
+        const uid = act.user_id;
+        const uname = act.user?.name || `User #${uid}`;
+        const uemail = act.user?.email;
+        if (!map.has(uid)) {
+          map.set(uid, { id: uid, name: uname, email: uemail, count: 1 });
+        } else {
+          map.get(uid)!.count += 1;
+        }
+      });
+    }
+    return Array.from(map.values());
+  }, [data]);
+
+  const filteredActivities = useMemo(() => {
+    if (!data?.recent_activity) return [];
+    if (selectedActivityMember === 'ALL') return data.recent_activity;
+    return data.recent_activity.filter((act) => act.user_id === Number(selectedActivityMember));
+  }, [data, selectedActivityMember]);
 
   if (loading) return <LoadingSpinner message="Loading Team Lead Dashboard..." />;
 
@@ -177,32 +217,166 @@ export const DashboardLead: React.FC = () => {
         </div>
 
         {/* Recent Activity Feed (1 col) */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Recent Activity Feed</h3>
-          {!data?.recent_activity || data.recent_activity.length === 0 ? (
-            <EmptyState
-              icon={<Clock className="w-5 h-5" />}
-              title="No activity recorded yet"
-              description="Actions performed by team members will automatically appear in this feed."
-            />
-          ) : (
-            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
-              {data.recent_activity.map((act) => (
-                <div key={act.id} className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs space-y-1">
-                  <div className="flex items-center justify-between text-slate-700 font-semibold">
-                    <span>{act.user?.name || 'User'}</span>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(act.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-                  <p className="text-slate-600">{act.action}</p>
-                </div>
-              ))}
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            {/* Header with Title & View Mode Switcher */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-sm font-bold text-slate-900">Recent Activity Feed</h3>
+                {data?.recent_activity && data.recent_activity.length > 0 && (
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">
+                    {filteredActivities.length}
+                  </span>
+                )}
+              </div>
+
+              {/* View mode toggle */}
+              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+                <button
+                  type="button"
+                  title="Feed View"
+                  onClick={() => setActivityViewMode('feed')}
+                  className={`p-1 rounded-md text-xs transition-colors ${
+                    activityViewMode === 'feed'
+                      ? 'bg-white text-blue-600 shadow-2xs font-semibold'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  title="Separate Member Sections"
+                  onClick={() => setActivityViewMode('sections')}
+                  className={`p-1 rounded-md text-xs transition-colors ${
+                    activityViewMode === 'sections'
+                      ? 'bg-white text-blue-600 shadow-2xs font-semibold'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* Member Dropdown / Filter Bar */}
+            {activityMembers.length > 0 && (
+              <div className="mb-3">
+                <div className="relative">
+                  <select
+                    value={selectedActivityMember}
+                    onChange={(e) => setSelectedActivityMember(e.target.value)}
+                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg pl-2.5 pr-8 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="ALL">All Team Members ({data?.recent_activity?.length || 0})</option>
+                    {activityMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.count} {m.count === 1 ? 'action' : 'actions'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Activity Content */}
+            {!data?.recent_activity || data.recent_activity.length === 0 ? (
+              <EmptyState
+                icon={<Clock className="w-5 h-5" />}
+                title="No activity recorded yet"
+                description="Actions performed by team members will automatically appear in this feed."
+              />
+            ) : activityViewMode === 'sections' ? (
+              /* Grouped by Individual Team Members */
+              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                {activityMembers
+                  .filter((m) => selectedActivityMember === 'ALL' || String(m.id) === selectedActivityMember)
+                  .map((member) => {
+                    const memberLogs = (data.recent_activity || []).filter((act) => act.user_id === member.id);
+                    return (
+                      <div key={member.id} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 space-y-2">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center">
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-slate-900 block leading-tight">{member.name}</span>
+                              {member.email && <span className="text-[10px] text-slate-400 block">{member.email}</span>}
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-semibold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">
+                            {memberLogs.length} {memberLogs.length === 1 ? 'log' : 'logs'}
+                          </span>
+                        </div>
+
+                        {memberLogs.length === 0 ? (
+                          <p className="text-[11px] text-slate-400 italic py-1">No recent actions recorded.</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {memberLogs.map((act) => (
+                              <div key={act.id} className="p-2 bg-white rounded-md border border-slate-100 text-xs space-y-0.5">
+                                <div className="flex items-center justify-between text-slate-600">
+                                  <span className="text-[11px] font-medium text-slate-800">{act.action}</span>
+                                  <span className="text-[10px] text-slate-400 shrink-0 ml-1">
+                                    {new Date(act.created_at).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              /* Filtered Feed View */
+              <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                {filteredActivities.length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-6">
+                    No activities found for this team member.
+                  </p>
+                ) : (
+                  filteredActivities.map((act) => (
+                    <div
+                      key={act.id}
+                      className="p-3 bg-slate-50 hover:bg-slate-100/80 transition-colors rounded-lg border border-slate-100 text-xs space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[9px] flex items-center justify-center">
+                            {(act.user?.name || 'U').charAt(0).toUpperCase()}
+                          </span>
+                          <span className="font-semibold text-slate-800">{act.user?.name || 'User'}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(act.created_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 text-[11px] leading-relaxed">{act.action}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 mt-3 flex justify-end">
+            <Link
+              to="/activity"
+              className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 group"
+            >
+              <span>Full Activity Feed</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
         </div>
       </div>
 

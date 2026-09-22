@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar, MessageSquare, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { Task, TaskStatus } from '../../types';
 import { Badge } from '../common/Badge';
+import { useAuth } from '../../context/AuthContext';
 
 interface TaskTableProps {
   tasks: Task[];
@@ -20,6 +21,8 @@ export const TaskTable: React.FC<TaskTableProps> = ({
   onDeleteTask,
   isLead = false,
 }) => {
+  const { user } = useAuth();
+  const isLeadUser = isLead || user?.role === 'TEAM_LEAD';
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString(undefined, {
@@ -96,7 +99,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                       <option value="TODO">TODO</option>
                       <option value="IN_PROGRESS">IN_PROGRESS</option>
                       <option value="REVIEW">REVIEW</option>
-                      <option value="COMPLETED">COMPLETED</option>
+                      {isLeadUser && <option value="COMPLETED">COMPLETED</option>}
                     </select>
                   ) : (
                     <Badge variant={task.status} size="sm" />

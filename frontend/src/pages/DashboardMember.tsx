@@ -15,6 +15,7 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { MemberDashboardData, Task, TaskStatus } from '../types';
 import { TaskCard } from '../components/tasks/TaskCard';
 import { TaskCommentsModal } from '../components/tasks/TaskCommentsModal';
+import { WebClock } from '../components/attendance/WebClock';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -70,6 +71,9 @@ export const DashboardMember: React.FC = () => {
           My Task List
         </Button>
       </div>
+
+      {/* Daily Attendance Clock Widget */}
+      <WebClock />
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

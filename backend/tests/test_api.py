@@ -323,7 +323,30 @@ def test_chat_and_groups():
     assert res_msg.status_code == 201
     assert res_msg.json()["message"] == "Hello Member!"
 
-    # Get conversation history
+    # Log in as member to check unread messages
+    res_mem_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "mem_chat@example.com", "password": "password123"}
+    )
+    assert res_mem_login.status_code == 200
+    headers_mem = {"Authorization": f"Bearer {res_mem_login.json()['access_token']}"}
+
+    # Verify member unread count is 1
+    res_unread = client.get("/api/v1/messages/unread/count", headers=headers_mem)
+    assert res_unread.status_code == 200
+    assert res_unread.json()["unread_count"] == 1
+    assert res_unread.json()["unread_by_sender"][str(lead_id)] == 1
+
+    # Member reads conversation
+    res_read = client.get(f"/api/v1/messages/{lead_id}", headers=headers_mem)
+    assert res_read.status_code == 200
+
+    # Verify unread count is now 0
+    res_unread_after = client.get("/api/v1/messages/unread/count", headers=headers_mem)
+    assert res_unread_after.status_code == 200
+    assert res_unread_after.json()["unread_count"] == 0
+
+    # Get conversation history for lead
     res_hist = client.get(f"/api/v1/messages/{mem_id}", headers=headers_lead)
     assert res_hist.status_code == 200
     assert len(res_hist.json()) == 1

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
-import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 
 export const Login: React.FC = () => {
@@ -92,7 +92,7 @@ export const Login: React.FC = () => {
         <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
           Don't have an account?{' '}
           <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700">
-            Register as Team Lead / Member
+            Register as Team Lead
           </Link>
         </div>
       </div>

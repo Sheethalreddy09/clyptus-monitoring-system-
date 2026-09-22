@@ -92,7 +92,6 @@ export const Register: React.FC = () => {
             onChange={(e) => setRole(e.target.value as UserRole)}
             options={[
               { value: 'TEAM_LEAD', label: 'Team Lead' },
-              { value: 'TEAM_MEMBER', label: 'Team Member' },
             ]}
           />
 

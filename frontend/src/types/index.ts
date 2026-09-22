@@ -200,3 +200,67 @@ export interface AnalyticsData {
   member_task_distribution: { name: string; task_count: number }[];
   overdue_count: number;
 }
+
+export type PunchType = 'CLOCK_IN' | 'CLOCK_OUT' | 'BREAK_START' | 'BREAK_END';
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'ON_LEAVE';
+
+export interface PunchLog {
+  id: number;
+  attendance_record_id: number;
+  punch_time: string;
+  punch_type: PunchType;
+  ip_address?: string | null;
+}
+
+export interface AttendanceRecord {
+  id: number;
+  member_id: number;
+  date: string;
+  first_clock_in?: string | null;
+  last_clock_out?: string | null;
+  status: AttendanceStatus;
+  total_active_minutes: number;
+  punches?: PunchLog[];
+  member_name?: string | null;
+  member_email?: string | null;
+}
+
+export interface TodayAttendanceData {
+  is_clocked_in: boolean;
+  is_on_break: boolean;
+  last_punch_type?: PunchType | null;
+  active_minutes_today: number;
+  first_clock_in?: string | null;
+  last_clock_out?: string | null;
+  status: AttendanceStatus;
+  record?: AttendanceRecord | null;
+  punches: PunchLog[];
+}
+
+export interface TeamMemberDailyAttendance {
+  member_id: number;
+  name: string;
+  email: string;
+  assigned_role?: string | null;
+  profile_image?: string | null;
+  current_status: 'ONLINE' | 'ON_BREAK' | 'CLOCKED_OUT' | 'NOT_LOGGED_IN';
+  first_clock_in?: string | null;
+  last_clock_out?: string | null;
+  active_minutes: number;
+  record_status: AttendanceStatus;
+}
+
+export interface TeamAttendanceSnapshot {
+  total_members: number;
+  online_count: number;
+  on_break_count: number;
+  clocked_out_count: number;
+  not_logged_in_count: number;
+  members: TeamMemberDailyAttendance[];
+}
+
+export interface UnreadMessagesCount {
+  unread_count: number;
+  unread_by_sender: Record<string, number>;
+}
+

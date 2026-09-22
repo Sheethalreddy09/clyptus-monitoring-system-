@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
@@ -11,6 +12,7 @@ def send_direct_message(db: Session, sender_id: int, message_in: MessageCreate) 
         sender_id=sender_id,
         receiver_id=message_in.receiver_id,
         message=message_in.message,
+        created_at=datetime.now(timezone.utc),
         is_read=False,
     )
     db.add(msg)
@@ -55,6 +57,7 @@ def send_group_message(db: Session, sender_id: int, message_in: GroupMessageCrea
         group_id=message_in.group_id,
         sender_id=sender_id,
         message=message_in.message,
+        created_at=datetime.now(timezone.utc),
     )
     db.add(msg)
     db.commit()

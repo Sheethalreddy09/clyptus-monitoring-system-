@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar, MessageSquare, Clock, User, CheckCircle2 } from 'lucide-react';
 import { Task, TaskStatus } from '../../types';
 import { Badge } from '../common/Badge';
+import { useAuth } from '../../context/AuthContext';
 
 interface TaskCardProps {
   task: Task;
@@ -18,6 +19,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onEditTask,
   isLead = false,
 }) => {
+  const { user } = useAuth();
+  const isLeadUser = isLead || user?.role === 'TEAM_LEAD';
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return null;
     return new Date(dateStr).toLocaleDateString(undefined, {
@@ -92,7 +95,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <option value="TODO">TODO</option>
               <option value="IN_PROGRESS">IN_PROGRESS</option>
               <option value="REVIEW">REVIEW</option>
-              <option value="COMPLETED">COMPLETED</option>
+              {isLeadUser && <option value="COMPLETED">COMPLETED</option>}
             </select>
           )}
         </div>

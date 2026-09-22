@@ -1,9 +1,16 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.core.database import get_db
 from app.models.all_models import Message, GroupMessage, User, Group
-from app.schemas.message import MessageCreate, MessageOut, GroupMessageCreate, GroupMessageOut
+from app.schemas.message import (
+    MessageCreate,
+    MessageOut,
+    GroupMessageCreate,
+    GroupMessageOut,
+    UnreadCountOut,
+)
 from app.services.auth_service import get_current_user
 from app.services.chat_service import (
     send_direct_message,
@@ -13,6 +20,46 @@ from app.services.chat_service import (
 )
 
 router = APIRouter(prefix="/messages", tags=["Messaging"])
+
+
+@router.get("/unread/count", response_model=UnreadCountOut)
+def get_unread_messages_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    total_unread = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+    ).count()
+
+    sender_counts = (
+        db.query(Message.sender_id, func.count(Message.id))
+        .filter(
+            Message.receiver_id == current_user.id,
+            Message.is_read == False,
+        )
+        .group_by(Message.sender_id)
+        .all()
+    )
+    by_sender = {str(sender_id): count for sender_id, count in sender_counts}
+
+    return {
+        "unread_count": total_unread,
+        "unread_by_sender": by_sender,
+    }
+
+
+@router.post("/read-all")
+def mark_all_messages_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    updated = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+    ).update({"is_read": True})
+    db.commit()
+    return {"status": "success", "marked_read_count": updated}
 
 
 @router.get("/{other_user_id}", response_model=List[MessageOut])

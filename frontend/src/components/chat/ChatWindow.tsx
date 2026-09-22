@@ -47,6 +47,40 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const formatLocalTime = (dateStr: string) => {
+    if (!dateStr) return '';
+    let safeStr = dateStr;
+    // If date string has no timezone indicator ('Z', '+' or '-' in time offset), treat as UTC
+    if (!safeStr.endsWith('Z') && !safeStr.includes('+') && !safeStr.slice(10).includes('-')) {
+      safeStr += 'Z';
+    }
+    const d = new Date(safeStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getFullTooltipTime = (dateStr: string) => {
+    if (!dateStr) return '';
+    let safeStr = dateStr;
+    if (!safeStr.endsWith('Z') && !safeStr.includes('+') && !safeStr.slice(10).includes('-')) {
+      safeStr += 'Z';
+    }
+    const d = new Date(safeStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString(undefined, {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
       {/* Header */}
@@ -93,11 +127,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   {msg.message}
                 </div>
 
-                <span className="text-[10px] text-slate-400 mt-1 px-1">
-                  {new Date(msg.created_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                <span
+                  className="text-[10px] text-slate-400 mt-1 px-1 cursor-default select-none"
+                  title={getFullTooltipTime(msg.created_at)}
+                >
+                  {formatLocalTime(msg.created_at)}
                 </span>
               </div>
             );

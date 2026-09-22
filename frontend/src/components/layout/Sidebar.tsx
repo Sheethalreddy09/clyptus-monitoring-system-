@@ -13,8 +13,11 @@ import {
   Bell,
   ShieldCheck,
   UserCheck,
+  Clock,
+  CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useMessageContext } from '../../context/MessageContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,6 +26,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const { unreadCount, isBumping } = useMessageContext();
   const isLead = user?.role === 'TEAM_LEAD';
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -43,8 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       <aside
-        className={`fixed lg:static top-0 left-0 z-50 h-screen w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed inset-y-0 left-0 z-40 h-screen w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
@@ -126,9 +130,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <span>Groups</span>
               </NavLink>
               <NavLink to="/messages" className={navLinkClass} onClick={onClose}>
-                <MessageSquare className="w-4 h-4" />
-                <span>Messages</span>
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                <span className="truncate flex-1">Messages</span>
+                {unreadCount > 0 && (
+                  <span
+                    className={`ml-auto shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[10px] font-extrabold text-white bg-red-600 rounded-full shadow-xs ring-1 ring-white/30 transition-all duration-300 ${
+                      isBumping ? 'animate-bounce scale-110 ring-2 ring-red-400' : ''
+                    }`}
+                    title={`${unreadCount} unread message${unreadCount > 1 ? 's' : ''}`}
+                    aria-label={`${unreadCount} unread messages`}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </NavLink>
+            </div>
+          </div>
+
+          {/* ATTENDANCE SECTION */}
+          <div>
+            <h4 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              Attendance
+            </h4>
+            <div className="space-y-1">
+              <NavLink to="/attendance" className={navLinkClass} onClick={onClose}>
+                <Clock className="w-4 h-4" />
+                <span>My Attendance</span>
+              </NavLink>
+              {isLead && (
+                <NavLink to="/team-attendance" className={navLinkClass} onClick={onClose}>
+                  <CalendarCheck className="w-4 h-4" />
+                  <span>Team Attendance</span>
+                </NavLink>
+              )}
             </div>
           </div>
 

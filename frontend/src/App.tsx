@@ -6,7 +6,6 @@ import { Layout } from './components/layout/Layout';
 // Pages
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { ForgotPassword } from './pages/ForgotPassword';
 import { DashboardLead } from './pages/DashboardLead';
 import { DashboardMember } from './pages/DashboardMember';
 import { ProjectsPage } from './pages/ProjectsPage';
@@ -20,6 +19,8 @@ import { CalendarPage } from './pages/CalendarPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { MyAttendancePage } from './pages/MyAttendancePage';
+import { LeadAttendanceDashboard } from './pages/LeadAttendanceDashboard';
 
 /** Full-screen loading spinner shown while the auth token is being verified. */
 function LoadingScreen() {
@@ -58,27 +59,28 @@ export default function App() {
   return (
     <Routes>
       {/* ── Public routes ─────────────────────────────────────────── */}
-      <Route path="/login"           element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register"        element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
       {/* ── Protected routes (wrapped in Layout + sidebar) ─────────── */}
       <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route path="/dashboard" element={<DashboardRedirect />} />
 
         {/* Shared by both roles */}
-        <Route path="/projects"      element={<ProjectsPage />} />
-        <Route path="/projects/:id"  element={<ProjectDetailPage />} />
-        <Route path="/groups"        element={<GroupsPage />} />
-        <Route path="/messages"      element={<ChatPage />} />
-        <Route path="/calendar"      element={<CalendarPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/messages" element={<ChatPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/attendance" element={<MyAttendancePage />} />
 
         {/* Team Lead only */}
-        <Route path="/tasks"     element={<TasksPage />} />
-        <Route path="/team"      element={<TeamMembersPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/team" element={<TeamMembersPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/activity"  element={<ActivityPage />} />
+        <Route path="/activity" element={<ActivityPage />} />
+        <Route path="/team-attendance" element={<LeadAttendanceDashboard />} />
 
         {/* Team Member only */}
         <Route path="/my-tasks" element={<MyTasksPage />} />
